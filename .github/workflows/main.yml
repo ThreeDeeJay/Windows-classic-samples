@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-2019
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Add msbuild to PATH
+        uses: microsoft/setup-msbuild@v1.1
+        with:
+          msbuild-architecture: x86
+
+      - name: Setup NuGet
+        uses: NuGet/setup-nuget@v1.0.6 
+
+      - name: Restore nuget
+        run: nuget restore Samples\ApplicationLoopback\cpp\ApplicationLoopback.sln
+
+      - name: Build Win32
+        run: msbuild Samples\ApplicationLoopback\cpp\ApplicationLoopback.sln -t:rebuild -verbosity:diag -property:Configuration=Release /p:Platform=x86
+
+      - name: Build Win64
+        run: msbuild Samples\ApplicationLoopback\cpp\ApplicationLoopback.sln -t:rebuild -verbosity:diag -property:Configuration=Release /p:Platform=x64
+
+      - name: Upload Win32
+        uses: actions/upload-artifact@v2
+        with:
+          name: ApplicationLoopback-Win32
+          path: Samples\ApplicationLoopback\cpp\Release\ApplicationLoopback.exe
+
+      - name: Upload Win64
+        uses: actions/upload-artifact@v2
+        with:
+          name: ApplicationLoopback-Win64
+          path: Samples\ApplicationLoopback\cpp\x64\Release\ApplicationLoopback.exe
